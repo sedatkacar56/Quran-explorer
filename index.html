@@ -137,6 +137,7 @@ Q U R A N &nbsp; E X P L O R E R
 <script>
 
 let verses=[]
+let activeSpan = null
 let wordCache={}
 
 const SURAH_NAMES = {
@@ -323,6 +324,18 @@ span.innerText=w.text_uthmani+" "
 
 span.onmouseover=(e)=>showTooltip(e,w)
 span.onmouseout=hideTooltip
+
+span.ontouchstart=(e)=>{
+  e.preventDefault()
+  if(activeSpan===span){
+    hideTooltip()
+    activeSpan=null
+  } else {
+    showTooltip(e.touches[0],w)
+    activeSpan=span
+  }
+}
+
 
 container.appendChild(span)
 
