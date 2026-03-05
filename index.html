@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Quran Explorer</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Amiri&display=swap" rel="stylesheet">
+
+<style>
+
+body{
+background:#0D1117;
+color:#F0EAD6;
+font-family:Georgia;
+text-align:center;
+padding:40px;
+}
+
+.bism{
+font-family:'Amiri';
+color:#C9A84C;
+font-size:36px;
+margin-bottom:10px;
+}
+
+.subtitle{
+color:#8B949E;
+letter-spacing:3px;
+}
+
+.card{
+background:#161B22;
+border:1px solid #8A6A28;
+padding:30px;
+max-width:850px;
+margin:auto;
+}
+
+#surahName{
+color:#C9A84C;
+font-size:30px;
+margin-bottom:4px;
+}
+
+#surahRef{
+color:#8B949E;
+margin-bottom:8px;
+}
+
+.theme{
+background:#1A2332;
+display:inline-block;
+padding:6px 14px;
+margin-bottom:18px;
+font-style:italic;
+color:#F0EAD6;
+}
+
+.arabic{
+font-family:'Amiri';
+font-size:32px;
+line-height:2.2;
+margin:20px 0;
+direction:rtl;
+}
+
+.word{
+cursor:pointer;
+padding:3px;
+}
+
+.word:hover{
+color:#C9A84C;
+}
+
+.tooltip{
+position:absolute;
+background:#111820;
+color:#F0EAD6;
+border:1px solid #C9A84C;
+padding:10px;
+display:none;
+max-width:200px;
+font-size:14px;
+}
+
+button{
+background:#C9A84C;
+border:none;
+padding:12px 30px;
+font-size:18px;
+cursor:pointer;
+margin-top:20px;
+}
+
+footer{
+margin-top:15px;
+color:#8B949E;
+font-size:14px;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="bism">
+بِسْمِ ٱللّٰهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ
+</div>
+
+<div class="subtitle">
+Q U R A N &nbsp; E X P L O R E R
+</div>
+
+<br>
+
+<div class="card">
+
+<h2 id="surahName"></h2>
+<div id="surahRef"></div>
+<div id="surahTheme" class="theme"></div>
+
+<div id="arabic" class="arabic"></div>
+
+<p id="english"></p>
+
+<button onclick="randomVerse()">✦ Random Verse ✦</button>
+
+</div>
+
+<footer>
+6,236 verses · Sahih International · Word hover enabled
+</footer>
+
+<div id="tooltip" class="tooltip"></div>
+
+<script>
+
+let verses=[]
+let wordCache={}
+
+const SURAH_NAMES = {
+    1:"Al-Fatihah",2:"Al-Baqarah",3:"Ali 'Imran",4:"An-Nisa",5:"Al-Ma'idah",
+    6:"Al-An'am",7:"Al-A'raf",8:"Al-Anfal",9:"At-Tawbah",10:"Yunus",
+    11:"Hud",12:"Yusuf",13:"Ar-Ra'd",14:"Ibrahim",15:"Al-Hijr",
+    16:"An-Nahl",17:"Al-Isra",18:"Al-Kahf",19:"Maryam",20:"Ta-Ha",
+    21:"Al-Anbiya",22:"Al-Hajj",23:"Al-Mu'minun",24:"An-Nur",25:"Al-Furqan",
+    26:"Ash-Shu'ara",27:"An-Naml",28:"Al-Qasas",29:"Al-'Ankabut",30:"Ar-Rum",
+    31:"Luqman",32:"As-Sajdah",33:"Al-Ahzab",34:"Saba",35:"Fatir",
+    36:"Ya-Sin",37:"As-Saffat",38:"Sad",39:"Az-Zumar",40:"Ghafir",
+    41:"Fussilat",42:"Ash-Shura",43:"Az-Zukhruf",44:"Ad-Dukhan",45:"Al-Jathiyah",
+    46:"Al-Ahqaf",47:"Muhammad",48:"Al-Fath",49:"Al-Hujurat",50:"Qaf",
+    51:"Adh-Dhariyat",52:"At-Tur",53:"An-Najm",54:"Al-Qamar",55:"Ar-Rahman",
+    56:"Al-Waqi'ah",57:"Al-Hadid",58:"Al-Mujadila",59:"Al-Hashr",60:"Al-Mumtahanah",
+    61:"As-Saf",62:"Al-Jumu'ah",63:"Al-Munafiqun",64:"At-Taghabun",65:"At-Talaq",
+    66:"At-Tahrim",67:"Al-Mulk",68:"Al-Qalam",69:"Al-Haqqah",70:"Al-Ma'arij",
+    71:"Nuh",72:"Al-Jinn",73:"Al-Muzzammil",74:"Al-Muddaththir",75:"Al-Qiyamah",
+    76:"Al-Insan",77:"Al-Mursalat",78:"An-Naba",79:"An-Nazi'at",80:"'Abasa",
+    81:"At-Takwir",82:"Al-Infitar",83:"Al-Mutaffifin",84:"Al-Inshiqaq",85:"Al-Buruj",
+    86:"At-Tariq",87:"Al-A'la",88:"Al-Ghashiyah",89:"Al-Fajr",90:"Al-Balad",
+    91:"Ash-Shams",92:"Al-Layl",93:"Ad-Duhaa",94:"Ash-Sharh",95:"At-Tin",
+    96:"Al-'Alaq",97:"Al-Qadr",98:"Al-Bayyinah",99:"Az-Zalzalah",100:"Al-'Adiyat",
+    101:"Al-Qari'ah",102:"At-Takathur",103:"Al-'Asr",104:"Al-Humazah",105:"Al-Fil",
+    106:"Quraysh",107:"Al-Ma'un",108:"Al-Kawthar",109:"Al-Kafirun",110:"An-Nasr",
+    111:"Al-Masad",112:"Al-Ikhlas",113:"Al-Falaq",114:"An-Nas"
+}
+
+const SURAH_THEMES = {
+    1:"Opening Prayer & Divine Guidance",2:"Guidance, Law & the Nature of Belief",
+    3:"The Family of Imran — Faith & Steadfastness",4:"Women — Rights, Justice & Social Order",
+    5:"The Table Spread — Covenants & Sacred Law",6:"Cattle — Monotheism & Divine Authority",
+    7:"The Heights — Stories of the Prophets",8:"The Spoils of War — Discipline & Trust in God",
+    9:"Repentance — Accountability & Struggle",10:"Jonah — Divine Power & Human Arrogance",
+    11:"Hud — Prophetic Perseverance",12:"Joseph — Patience, Beauty & Divine Plan",
+    13:"Thunder — Signs of God in Creation",14:"Abraham — Gratitude & Purification",
+    15:"The Rocky Tract — Arrogance & Consequence",16:"The Bee — Divine Blessings & Natural Signs",
+    17:"The Night Journey — Spiritual Ascent & Commandments",
+    18:"The Cave — Trials of Faith, Knowledge & Time",
+    19:"Mary — Purity, Prophethood & Miracles",20:"Ta-Ha — Moses & the Journey to God",
+    21:"The Prophets — Unity of Prophetic Mission",22:"The Pilgrimage — Hajj, Sacrifice & Devotion",
+    23:"The Believers — Qualities of the Faithful",24:"The Light — Purity, Modesty & Spiritual Light",
+    25:"The Criterion — Truth vs. Falsehood",26:"The Poets — Prophets and Their People",
+    27:"The Ant — Solomon, Signs & Submission",28:"The Story — Moses, Power & Divine Justice",
+    29:"The Spider — Tests of Faith",30:"The Romans — Rise, Fall & Divine Promise",
+    31:"Luqman — Wisdom & Parental Guidance",32:"The Prostration — Creation, Death & Judgment",
+    33:"The Confederates — Community, Marriage & Conduct",
+    34:"Sheba — Gratitude & the Consequences of Denial",
+    35:"The Originator — Creation & Divine Majesty",
+    36:"Ya-Sin — The Heart of the Quran & Resurrection",
+    37:"Those Who Set the Ranks — Angels & the Prophets",
+    38:"Sad — David, Solomon & Prophetic Trials",
+    39:"The Troops — Sincerity & Divine Forgiveness",40:"The Forgiver — Patience & Divine Mercy",
+    41:"Explained in Detail — Clarity of Revelation",42:"Consultation — Unity & Divine Decree",
+    43:"Ornaments of Gold — Truth Over Worldly Glitter",44:"The Smoke — Punishment & Redemption",
+    45:"The Crouching — Signs, Judgment & Ingratitude",
+    46:"The Wind-Curved Sandhills — Communities & Prophets",
+    47:"Muhammad — Struggle, Dedication & Victory",
+    48:"The Victory — Divine Help & the Conquest of Mecca",
+    49:"The Private Apartments — Brotherhood & Ethics",
+    50:"Qaf — Resurrection, Certainty & Divine Nearness",
+    51:"The Winnowing Winds — Divine Promises",52:"The Mount — Oaths, Paradise & Truth",
+    53:"The Star — Divine Revelation & Limits of Knowledge",
+    54:"The Moon — Signs Ignored & Consequences",55:"The Beneficent — Blessings of God",
+    56:"The Inevitable Event — Judgment, Heaven & Hell",
+    57:"The Iron — Humility, Charity & Spiritual Strength",
+    58:"The Pleading Woman — Justice & Divine Knowledge",59:"The Exile — Divine Power & Reflection",
+    60:"She Who is Examined — Loyalty & Relationships",
+    61:"The Ranks — Sincerity & Supporting God's Cause",
+    62:"Friday — Congregational Prayer & Community",63:"The Hypocrites — Hypocrisy & Authenticity",
+    64:"Mutual Disillusion — Accountability & Charity",65:"Divorce — Rights, Justice & Trust in God",
+    66:"The Prohibition — Households of the Prophet",
+    67:"The Sovereignty — Divine Power Over All Creation",
+    68:"The Pen — Character, Patience & Truth",69:"The Reality — Day of Judgment & Accountability",
+    70:"The Ascending Stairways — Patience & Divine Nearness",
+    71:"Noah — Calling to God & Perseverance",72:"The Jinn — The Jinn Hear the Quran",
+    73:"The Enshrouded One — Night Prayer & Fortitude",74:"The Cloaked One — Rise & Warn Humanity",
+    75:"The Resurrection — Certainty of the Afterlife",76:"Man — Free Will, Gratitude & Paradise",
+    77:"The Emissaries — Repeated Divine Warnings",78:"The Announcement — Day of Judgment",
+    79:"Those Who Drag Forth — Death & Resurrection",
+    80:"He Frowned — Humility & Equal Worth of All Souls",
+    81:"The Overthrowing — Signs of the Last Day",82:"The Cleaving — Judgment & Recording of Deeds",
+    83:"The Dealers in Fraud — Justice & Integrity",
+    84:"The Splitting Asunder — Inevitable Return to God",
+    85:"The Mansions of the Stars — Perseverance Under Oppression",
+    86:"The Night Visitant — Human Origins & Divine Watch",
+    87:"The Most High — Glorification & Divine Ease",88:"The Overwhelming — Faces on Judgment Day",
+    89:"The Dawn — Reflection on Past Nations",90:"The City — Human Struggle & Moral Choice",
+    91:"The Sun — The Soul & Its Purification",92:"The Night — Generosity vs. Miserliness",
+    93:"The Morning Hours — Divine Care for the Prophet",94:"The Relief — Ease After Hardship",
+    95:"The Fig — Human Dignity & Accountability",
+    96:"The Clot — First Revelation & Seeking Knowledge",97:"The Power — Night of Decree",
+    98:"The Clear Proof — Truth Brought by Revelation",
+    99:"The Earthquake — Earth's Testimony on Judgment Day",100:"The Courser — Human Ingratitude",
+    101:"The Calamity — The Weighing of Deeds",
+    102:"Rivalry in World Increase — Distraction of the Dunya",
+    103:"The Declining Day — The Formula for Success",104:"The Traducer — Wealth, Slander & Ruin",
+    105:"The Elephant — Divine Protection of the Sacred House",
+    106:"Quraysh — Gratitude for Security & Provision",
+    107:"Small Kindnesses — True Religion vs. Hypocrisy",108:"Abundance — Gift of Al-Kawthar",
+    109:"The Disbelievers — Freedom of Conscience",110:"The Divine Support — Victory & Farewell",
+    111:"The Palm Fiber — Arrogance Brought to Nothing",112:"Sincerity — Pure Monotheism",
+    113:"The Daybreak — Seeking Refuge from Evil",
+    114:"Mankind — Protection from Inner & Outer Whispers",
+}
+
+async function loadQuran(){
+
+let ar=await fetch("https://api.alquran.cloud/v1/quran/quran-uthmani")
+let en=await fetch("https://api.alquran.cloud/v1/quran/en.sahih")
+
+let arData=await ar.json()
+let enData=await en.json()
+
+arData.data.surahs.forEach((s,i)=>{
+
+s.ayahs.forEach((v,j)=>{
+
+verses.push({
+surah:s.number,
+ayah:v.numberInSurah,
+arabic:v.text,
+english:enData.data.surahs[i].ayahs[j].text
+})
+
+})
+
+})
+
+randomVerse()
+
+}
+
+async function randomVerse(){
+
+let v=verses[Math.floor(Math.random()*verses.length)]
+
+document.getElementById("surahName").innerText =
+SURAH_NAMES[v.surah] || "Surah "+v.surah
+
+document.getElementById("surahRef").innerText =
+"Surah "+v.surah+" · Verse "+v.ayah
+
+document.getElementById("surahTheme").innerText =
+SURAH_THEMES[v.surah] || ""
+
+document.getElementById("english").innerText =
+'"'+v.english+'"'
+
+let key=v.surah+":"+v.ayah
+
+let words=await fetchWords(key)
+
+renderArabic(words)
+
+}
+
+async function fetchWords(key){
+
+if(wordCache[key]) return wordCache[key]
+
+let url=`https://api.qurancdn.com/api/qdc/verses/by_key/${key}?words=true&word_fields=text_uthmani,translation_text,transliteration_text`
+
+let r=await fetch(url)
+let data=await r.json()
+
+let words=data.verse.words.filter(w=>w.char_type_name=="word")
+
+wordCache[key]=words
+return words
+
+}
+
+function renderArabic(words){
+
+let container=document.getElementById("arabic")
+container.innerHTML=""
+
+words.forEach(w=>{
+
+let span=document.createElement("span")
+span.className="word"
+span.innerText=w.text_uthmani+" "
+
+span.onmouseover=(e)=>showTooltip(e,w)
+span.onmouseout=hideTooltip
+
+container.appendChild(span)
+
+})
+
+}
+
+function showTooltip(e,w){
+
+let t=document.getElementById("tooltip")
+
+t.innerHTML=
+"<b>"+w.text_uthmani+"</b><br>"+
+(w.transliteration?.text || "")+"<br>"+
+(w.translation?.text || "")
+
+t.style.left=e.pageX+"px"
+t.style.top=(e.pageY-40)+"px"
+t.style.display="block"
+
+}
+
+function hideTooltip(){
+document.getElementById("tooltip").style.display="none"
+}
+
+loadQuran()
+
+</script>
+
+</body>
+</html>
